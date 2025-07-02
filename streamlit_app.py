@@ -16,7 +16,7 @@ def init_db():
             name TEXT,
             date TEXT,
             time TEXT,
-            started TEXT,
+            started INTEGER DEFAULT 0,
             typetx INTEGER DEFAULT 0,
             typesrp INTEGER DEFAULT 0,
             note TEXT
@@ -43,7 +43,7 @@ with tab1:
         name = st.selectbox("Name", names)
         date = st.date_input("Date", datetime.today())
         time_val = st.selectbox("Time", times)
-        type_val = st.selectbox("Started Same Day?", type_options)
+        type_val = st.checkbox("Started Same Day?")
         typeTx = st.checkbox("Scheduled Tx")
         typeSRP = st.checkbox("Same Day SRP")
         note = st.text_input("Other Note")
@@ -54,7 +54,7 @@ with tab1:
             cursor.execute("""
                 INSERT INTO tracking (name, date, time, started, typetx, typesrp, note)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (name, str(date), time_val, type_val, int(typeTx), int(typeSRP), note))
+            """, (name, str(date), time_val, int(type_val), int(typeTx), int(typeSRP), note))
             conn.commit()
             st.success("✅ Entry added!")
         except Exception as e:
@@ -101,7 +101,7 @@ with tab3:
                     new_name = st.selectbox("Name", names, index=names.index(row["name"]))
                     new_date = st.date_input("Date", pd.to_datetime(row["date"]), key=f"d_{row['id']}")
                     new_time = st.selectbox("Time", times, index=times.index(row["time"]))
-                    new_type_val = st.selectbox("Started Same Day?", type_options, index=type_options.index(row["started"]))
+                    new_type_val = st.checkbox("Started Same Day?", value=bool(row["started"]))
                     new_typeTx = st.checkbox("Scheduled Tx", value=bool(row["typetx"]))
                     new_typeSRP = st.checkbox("Same Day SRP", value=bool(row["typesrp"]))
                     new_note = st.text_input("Other Note", value=row["note"])
@@ -113,7 +113,7 @@ with tab3:
                             UPDATE tracking
                             SET name = ?, date = ?, time = ?, started = ?, typetx = ?, typesrp = ?, note = ?
                             WHERE id = ?
-                        """, (new_name, str(new_date), new_time, new_type_val, int(new_typeTx), int(new_typeSRP), new_note, row["id"]))
+                        """, (new_name, str(new_date), new_time, int(new_type_val), int(new_typeTx), int(new_typeSRP), new_note, row["id"]))
                         conn.commit()
                         st.success("✅ Entry updated. Refresh to see changes.")
                     except Exception as e:
