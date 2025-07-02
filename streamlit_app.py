@@ -1,8 +1,10 @@
 import streamlit as st
 import sqlite3
 import pandas as pd
-from datetime import datetime
+from datetime import time, timedelta
 
+
+times = generate_half_hour_slots()
 # Setup
 st.set_page_config(page_title="Tracking App", layout="wide")
 
@@ -30,7 +32,17 @@ cursor = conn.cursor()
 
 # Dropdowns
 names = ["Valkyrie", "Jupyter"]
-times = [f"{h}:00 {'AM' if h < 12 else 'PM'}" for h in range(8, 12)] + ["12:00 PM"] + [f"{h-12}:00 PM" for h in range(13, 18)]
+
+def generate_half_hour_slots(start=8, end=17):
+    slots = []
+    t = datetime.strptime(f"{start}:00", "%H:%M")
+    while t.hour < end or (t.hour == end and t.minute == 0):
+        slots.append(t.strftime("%-I:%M %p"))  # 8:00 AM, 8:30 AM...
+        t += timedelta(minutes=30)
+    return slots
+
+times = generate_half_hour_slots()
+
 type_options = ["Yes", "No"]
 
 # Tabs
