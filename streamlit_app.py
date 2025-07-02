@@ -33,11 +33,12 @@ names = ["Valkyrie", "Jupyter"]
 
 def generate_half_hour_slots(start=8, end=17):
     slots = []
-    t = datetime.strptime(f"{start}:00", "%H:%M")
+    t = datetime.datetime.strptime(f"{start}:00", "%H:%M")
     while t.hour < end or (t.hour == end and t.minute == 0):
-        slots.append(t.strftime("%-I:%M %p"))  # 8:00 AM, 8:30 AM...
-        t += timedelta(minutes=30)
+        slots.append(t.strftime("%-I:%M %p"))  # e.g., 8:30 AM
+        t += datetime.timedelta(minutes=30)
     return slots
+
 
 times = generate_half_hour_slots()
 
