@@ -8,7 +8,7 @@ st.set_page_config(page_title="Tracking App", layout="wide")
 
 # DB connection
 def init_db():
-    conn = sqlite3.connect("tracking.db", check_same_thread=False)
+    conn = sqlite3.connect("tracking_v2.db", check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS tracking (
