@@ -3,8 +3,6 @@ import sqlite3
 import pandas as pd
 from datetime import time, timedelta
 
-
-times = generate_half_hour_slots()
 # Setup
 st.set_page_config(page_title="Tracking App", layout="wide")
 
