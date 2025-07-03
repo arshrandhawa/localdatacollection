@@ -2,6 +2,8 @@ import streamlit as st
 import sqlite3
 import pandas as pd
 from datetime import datetime, timedelta
+import matplotlib.pyplot as plt
+import plotly.express as px
 
 # Setup
 st.set_page_config(page_title="Tracking App", layout="wide")
@@ -29,14 +31,14 @@ conn = init_db()
 cursor = conn.cursor()
 
 # Dropdowns
-names = ["Valkyrie", "Jupyter"]
+names = ["Venus", "Jupiter"]
 
 def generate_half_hour_slots(start=8, end=17):
     slots = []
-    t = datetime.datetime.strptime(f"{start}:00", "%H:%M")
+    t = datetime.strptime(f"{start}:00", "%H:%M")
     while t.hour < end or (t.hour == end and t.minute == 0):
-        slots.append(t.strftime("%-I:%M %p"))  # e.g., 8:30 AM
-        t += datetime.timedelta(minutes=30)
+        slots.append(t.strftime("%I:%M %p").lstrip("0"))  # Safer cross-platform
+        t += timedelta(minutes=30)
     return slots
 
 times = generate_half_hour_slots()
@@ -45,7 +47,7 @@ times = generate_half_hour_slots()
 type_options = ["Yes", "No"]
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["➕ Add Entry", "📄 View Only", "✏️ Manage Entries"])
+tab1, tab2, tab3, tab4 = st.tabs(["➕ Add Entry", "📄 View Only", "✏️ Manage Entries", "📊 Data Analytics"])
 
 # --- TAB 1: ADD ENTRY ---
 with tab1:
@@ -138,3 +140,109 @@ with tab3:
                             st.success("🗑️ Entry deleted. Refresh to see changes.")
                         except Exception as e:
                             st.error(f"❌ Failed to delete entry: {e}")
+
+
+with tab4:
+    st.header("📊 Checkbox Summary by Person and Overall")
+
+    df = pd.read_sql_query("SELECT * FROM tracking", conn)
+
+    if df.empty:
+        st.info("No data available for analysis.")
+    else:
+        # Preprocess
+        df["date"] = pd.to_datetime(df["date"])
+        df["started"] = df["started"].astype(bool)
+        df["typetx"] = df["typetx"].astype(bool)
+        df["typesrp"] = df["typesrp"].astype(bool)
+
+        checkbox_fields = {
+            "started": "Started Same Day",
+            "typetx": "Scheduled Tx",
+            "typesrp": "Same Day SRP"
+        }
+
+        # 🔹 Date filter
+        st.subheader("📆 Filter Data by Date")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            start_date = st.date_input("Start Date", df["date"].min(), key="filter_start_tab4")
+        with col2:
+            end_date = st.date_input("End Date", df["date"].max(), key="filter_end_tab4")
+            
+        df_filtered = df[(df["date"] >= pd.to_datetime(start_date)) & (df["date"] <= pd.to_datetime(end_date))]
+
+        if df_filtered.empty:
+            st.warning("No data found for selected date range.")
+            st.stop()
+
+        # 🔹 Option to show stats
+        show_summary_stats = st.checkbox("📊 Show Summary Stats Table", value=False)
+
+        # 🔹 Per-person breakdown
+        st.subheader("👤 Checkbox Rate by Person")
+
+        for name in df_filtered["name"].unique():
+            st.markdown(f"### {name}")
+            col1, col2, col3 = st.columns(3)
+
+            for i, (field, label) in enumerate(checkbox_fields.items()):
+                person_df = df_filtered[df_filtered["name"] == name]
+                counts = person_df[field].value_counts().rename({True: "Yes", False: "No"}).reset_index()
+                counts.columns = [field, "count"]
+
+                fig = px.pie(
+                    counts,
+                    names=field,
+                    values="count",
+                    title=label,
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.qualitative.Pastel
+                )
+                fig.update_traces(
+                    textinfo="percent+label",
+                    hovertemplate="%{label}<br>Count: %{value}<br>Percent: %{percent}"
+                )
+                fig.update_layout(margin=dict(t=40, b=0, l=0, r=0))
+
+                [col1, col2, col3][i].plotly_chart(fig, use_container_width=True, key=f"{name}_{field}")
+
+                if show_summary_stats:
+                    [col1, col2, col3][i].dataframe(counts, use_container_width=True)
+
+       # 🔹 Overall breakdown (Grouped by person)
+        st.subheader("📊 Overall 'Yes' Count by Person per Checkbox")
+
+        col1, col2, col3 = st.columns(3)
+
+        for i, (field, label) in enumerate(checkbox_fields.items()):
+            group_yes = (
+                df_filtered[df_filtered[field] == True]
+                .groupby("name")
+                .size()
+                .reset_index(name="count")
+            )
+
+            if group_yes.empty:
+                group_yes = pd.DataFrame({"name": ["No Data"], "count": [1]})
+
+            fig = px.pie(
+                group_yes,
+                names="name",
+                values="count",
+                title=label,
+                hole=0.5,
+                color_discrete_sequence=px.colors.qualitative.Set3
+            )
+            fig.update_traces(
+                textinfo="percent+label",
+                hovertemplate="%{label}<br>Count: %{value}<br>Percent: %{percent}"
+            )
+            fig.update_layout(margin=dict(t=40, b=0, l=0, r=0))
+
+            [col1, col2, col3][i].plotly_chart(fig, use_container_width=True, key=f"grouped_total_{field}")
+
+            if show_summary_stats:
+                [col1, col2, col3][i].dataframe(group_yes, use_container_width=True)
+
