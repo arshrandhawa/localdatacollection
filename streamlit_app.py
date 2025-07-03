@@ -4,7 +4,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import plotly.express as px
-
+from zoneinfo import ZoneInfo
 # Setup
 st.set_page_config(page_title="Tracking App", layout="wide")
 
@@ -42,6 +42,7 @@ def generate_half_hour_slots(start=8, end=17):
     return slots
 
 times = generate_half_hour_slots()
+mst_now = datetime.now(ZoneInfo("America/Denver"))
 
 
 type_options = ["Yes", "No"]
@@ -54,7 +55,7 @@ with tab1:
     st.header("➕ Add New Tracking Entry")
     with st.form("entry_form"):
         name = st.selectbox("Name", names)
-        date = st.date_input("Date", datetime.today())
+        date = st.date_input("Date", mst_now.date())
         time_val = st.selectbox("Time", times)
         type_val = st.checkbox("Started Same Day?")
         typeTx = st.checkbox("Scheduled Tx")
