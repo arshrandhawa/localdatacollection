@@ -15,6 +15,7 @@ __pycache__/
 # Ignore IDE-specific files (e.g., VS Code, PyCharm)
 .vscode/
 .idea/
+google_creds.json
 
 # Ignore system files (e.g., macOS, Windows)
 .DS_Store

@@ -9,7 +9,11 @@ from oauth2client.service_account import ServiceAccountCredentials
 # Setup
 st.set_page_config(page_title="Tracking App", layout="wide")
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds = ServiceAccountCredentials.from_json_keyfile_name("google_creds.json", scope)
+#local
+#creds = ServiceAccountCredentials.from_json_keyfile_name("google_creds.json", scope)
+#Streamlit Cloud Secrets 
+creds = ServiceAccountCredentials.from_json_keyfile_name("gspread-creds.json", scope)
+
 client = gspread.authorize(creds)
 sheet = client.open("TrackingDB").sheet1
 
