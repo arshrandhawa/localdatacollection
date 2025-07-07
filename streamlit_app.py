@@ -12,7 +12,8 @@ scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/au
 #local
 #creds = ServiceAccountCredentials.from_json_keyfile_name("google_creds.json", scope)
 #Streamlit Cloud Secrets 
-creds = ServiceAccountCredentials.from_json_keyfile_name("gspread-creds.json", scope)
+creds_dict = dict(st.secrets["gspread"])
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 
 client = gspread.authorize(creds)
 sheet = client.open("TrackingDB").sheet1
